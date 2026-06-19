@@ -258,10 +258,63 @@ services:
       - coolify
 
   nginx:
-    build:
-      context: ./docker/nginx
-      dockerfile: Dockerfile.nginx
+    image: nginx:alpine
     restart: always
+    command: >
+      sh -c "
+      cat > /etc/nginx/nginx.conf <<'EOF'
+      events { worker_connections 1024; }
+      http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        upstream api_server { server api:5001; }
+        upstream web_server { server web:3000; }
+        server {
+          listen 80;
+          server_name _;
+          client_max_body_size 500M;
+          location / {
+            proxy_pass http://web_server;
+            proxy_set_header Host $$host;
+            proxy_set_header X-Real-IP $$remote_addr;
+            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+          location /console {
+            proxy_pass http://api_server;
+            proxy_set_header Host $$host;
+            proxy_set_header X-Real-IP $$remote_addr;
+            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+          location /api {
+            proxy_pass http://api_server;
+            proxy_set_header Host $$host;
+            proxy_set_header X-Real-IP $$remote_addr;
+            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+          location /v1 {
+            proxy_pass http://api_server;
+            proxy_set_header Host $$host;
+            proxy_set_header X-Real-IP $$remote_addr;
+            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $$scheme;
+          }
+          location /files {
+            proxy_pass http://api_server;
+            proxy_set_header Host $$host;
+            proxy_set_header X-Real-IP $$remote_addr;
+          }
+          location /health {
+            proxy_pass http://api_server;
+            access_log off;
+          }
+        }
+      }
+      EOF
+      nginx -g 'daemon off;'
+      "
     depends_on:
       - api
       - web
