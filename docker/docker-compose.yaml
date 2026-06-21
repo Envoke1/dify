@@ -1,6 +1,7 @@
 services:
   init-permissions:
     image: busybox:latest
+    exclude_from_hc: true
     command: >
       sh -c "mkdir -p /app/api/storage && chown -R 1001:1001 /app/api/storage"
     volumes:
