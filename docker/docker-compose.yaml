@@ -1,7 +1,6 @@
 services:
   init-permissions:
     image: busybox:latest
-    exclude_from_hc: true
     command: >
       sh -c "mkdir -p /app/api/storage && chown -R 1001:1001 /app/api/storage"
     volumes:
@@ -102,10 +101,8 @@ services:
       - dify-plugin-packages:/app/storage/plugin_packages
       - dify-plugin-cwd:/app/storage/cwd
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+      - db
+      - redis
 
   api:
     image: langgenius/dify-api:1.13.3
@@ -162,22 +159,17 @@ services:
     volumes:
       - dify-storage:/app/api/storage
     depends_on:
-      init-permissions:
-        condition: service_completed_successfully
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      weaviate:
-        condition: service_started
-      minio:
-        condition: service_started
+      - init-permissions
+      - db
+      - redis
+      - weaviate
+      - minio
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s
       timeout: 5s
-      retries: 3
-      start_period: 30s
+      retries: 10
+      start_period: 120s
 
   worker:
     image: langgenius/dify-api:1.13.3
@@ -217,12 +209,9 @@ services:
     volumes:
       - dify-storage:/app/api/storage
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      minio:
-        condition: service_started
+      - db
+      - redis
+      - minio
 
   web:
     image: langgenius/dify-web:1.13.3
