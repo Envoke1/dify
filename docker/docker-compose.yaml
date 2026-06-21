@@ -298,8 +298,9 @@ services:
       - web
     labels:
       - coolify.enable=true
-      - 'traefik.http.routers.dify.rule=Host(`${API_DOMAIN}`)'
+      - 'traefik.http.routers.dify.rule=Host(`dify.amanigroupdigital.co.za`)'
       - traefik.http.services.dify.loadbalancer.server.port=80
+      - coolify.port=80
 
 volumes:
   dify-db:
